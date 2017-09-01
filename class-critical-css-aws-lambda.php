@@ -61,7 +61,7 @@ class WP_Critical_CSS_AWS_Lambda{
     /**
      * @return string link of current page
      */
-    private static function get_page_link(){
+    public static function get_page_link(){
         $link = home_url($_SERVER['REQUEST_URI']);
 
         return $link;
