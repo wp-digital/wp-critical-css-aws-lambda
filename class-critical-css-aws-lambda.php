@@ -4,14 +4,13 @@ use Aws\Lambda\LambdaClient;
 
 class WP_Critical_CSS_AWS_Lambda{
 
-    protected $_operations = [];
 
     /**
      * @var LambdaClient
      */
     protected $_lambda_client = null;
 
-    protected $_file_s3_key = false;
+
 
 
     public function load(){
@@ -39,12 +38,10 @@ class WP_Critical_CSS_AWS_Lambda{
         global $wp_styles;
         $registered_styles = $wp_styles->registered;
         $css = [];
-        $handles = apply_filters('critical_css',$css);
+        $handles = apply_filters('critical_css',[]);
             foreach ($handles as $handle){
                 if(isset($registered_styles[$handle])){
-                    $css = [
-                        $registered_styles[$handle]->src
-                    ];
+                    $css[] = $registered_styles[$handle]->src;
                 }
             }
         return $css;
@@ -70,15 +67,12 @@ class WP_Critical_CSS_AWS_Lambda{
         return $link;
     }
     protected function _run_lambda(){
-        if(defined('AWS_LAMBDA_CSS_BUCKET')){
-            $args = $this->_get_lambda_args();
-        }
 
         $function = $this->_get_lambda_function();
-        if(is_object($this->_lambda_client) && isset($args)){
+        if(!is_null($this->_lambda_client)){
             return $this->_lambda_client->invoke( [
                 'FunctionName' => $function,
-                'Payload' => json_encode( $args ),
+                'Payload' => defined('AWS_LAMBDA_CSS_BUCKET') ? json_encode( $this->_get_lambda_args() ):'',
             ] );
         }
         else{
