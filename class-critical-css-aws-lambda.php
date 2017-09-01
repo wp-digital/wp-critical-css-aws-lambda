@@ -22,6 +22,17 @@ class WP_Critical_CSS_AWS_Lambda{
                 'version' => '2017-09-01',
             ]);
         }
+        $invokes = get_transient('invokes_lambda');
+        $status = true;
+        foreach ($invokes as $invoke){
+            if($invoke['template'] == self::get_template_name()){
+                $status = false;
+                break;
+            }
+        }
+        if($status){
+            $this->_run_lambda();
+        }
 
     }
 
@@ -68,13 +79,18 @@ class WP_Critical_CSS_AWS_Lambda{
      * @return \Aws\Result|bool
      */
     protected function _run_lambda(){
-
+        $invokes = get_transient('invokes_lambda');
         $function = $this->_get_lambda_function();
         if(!is_null($this->_lambda_client)){
-            return $this->_lambda_client->invoke( [
+            $invoke = $this->_lambda_client->invoke( [
                 'FunctionName' => $function,
                 'Payload'      => defined('AWS_LAMBDA_CSS_BUCKET') ? json_encode($this->_get_lambda_args()):'',
             ] );
+            $invokes[] = [
+                'template' => self::get_template_name()
+            ];
+            set_transient('invoke_lambda',$invokes);
+            return $invoke;
         }
         else{
             return false;
