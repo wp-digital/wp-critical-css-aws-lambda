@@ -13,22 +13,21 @@ class WP_Critical_CSS_AWS_Lambda{
 
     protected $_file_s3_key = false;
 
-    protected function _add_operation( $operation, $params )
-    {
-        $this->_operations[] = array_merge( [ 'action' => $operation ], $params );
-    }
 
     public function load(){
 
 
-        $this->_lambda_client = new LambdaClient([
-            'credentials' => array(
-                'key'    => AWS_LAMBDA_CSS_KEY,
-                'secret' => AWS_LAMBDA_CSS_SECRET,
-            ),
-            'region' => AWS_LAMBDA_CSS_REGION,
-            'version' => '2017-09-01',
-        ]);
+        if(defined('AWS_LAMBDA_CSS_KEY') && defined('AWS_LAMBDA_CSS_SECRET') && defined('AWS_LAMBDA_CSS_REGION')){
+            $this->_lambda_client = new LambdaClient([
+                'credentials' => array(
+                    'key'    => AWS_LAMBDA_CSS_KEY,
+                    'secret' => AWS_LAMBDA_CSS_SECRET,
+                ),
+                'region' => AWS_LAMBDA_CSS_REGION,
+                'version' => '2017-09-01',
+            ]);
+        }
+
 
     }
 
@@ -40,8 +39,7 @@ class WP_Critical_CSS_AWS_Lambda{
         global $wp_styles;
         $registered_styles = $wp_styles->registered;
         $css = [];
-        $handles = apply_filters('critical_css');
-        if(is_array($handles)){
+        $handles = apply_filters('critical_css',$css);
             foreach ($handles as $handle){
                 if(isset($registered_styles[$handle])){
                     $css = [
@@ -49,7 +47,6 @@ class WP_Critical_CSS_AWS_Lambda{
                     ];
                 }
             }
-        }
         return $css;
     }
 
@@ -60,7 +57,7 @@ class WP_Critical_CSS_AWS_Lambda{
         global $template;
 
         $theme_directory = get_template_directory();
-        $template_name = substr($template, strlen($theme_directory) - strlen($template) + 1);
+        $template_name = str_replace($theme_directory,'',$template);
         return $template_name;
     }
 
@@ -68,30 +65,26 @@ class WP_Critical_CSS_AWS_Lambda{
      * @return string link of current page
      */
     private static function get_page_link(){
-        $link = '';
-        if(is_front_page()){
-            $link = home_url('/');
-        }
+        $link = home_url($_SERVER['REQUEST_URI']);
 
-        elseif(get_class(get_queried_object()) == "WP_Term"){
-            $term = get_queried_object();
-            $link = get_term_link($term->term_id,$term->taxonomy);
-        }
-        elseif(is_home()){
-            $link = get_the_permalink(get_option('page_for_posts'));
-        }
-        else{
-            $link = get_page_link();
-        }
         return $link;
     }
     protected function _run_lambda(){
-        $args = $this->_get_lambda_args();
+        if(defined('AWS_LAMBDA_CSS_BUCKET')){
+            $args = $this->_get_lambda_args();
+        }
+
         $function = $this->_get_lambda_function();
-        return $this->_lambda_client->invoke( [
-            'FunctionName' => $function,
-            'Payload' => json_encode( $args ),
-        ] );
+        if(is_object($this->_lambda_client) && isset($args)){
+            return $this->_lambda_client->invoke( [
+                'FunctionName' => $function,
+                'Payload' => json_encode( $args ),
+            ] );
+        }
+        else{
+            return false;
+        }
+
     }
     /**
      * @return array with arguments for LambdaClient
