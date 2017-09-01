@@ -73,7 +73,7 @@ class WP_Critical_CSS_AWS_Lambda{
         if(!is_null($this->_lambda_client)){
             return $this->_lambda_client->invoke( [
                 'FunctionName' => $function,
-                'Payload'      => defined('AWS_LAMBDA_CSS_BUCKET') ? json_encode( $this->_get_lambda_args() ):'',
+                'Payload'      => defined('AWS_LAMBDA_CSS_BUCKET') ? json_encode($this->_get_lambda_args()):'',
             ] );
         }
         else{
