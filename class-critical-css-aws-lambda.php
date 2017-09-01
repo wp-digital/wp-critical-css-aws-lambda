@@ -24,12 +24,15 @@ class WP_Critical_CSS_AWS_Lambda{
         }
         $invokes = get_transient('invokes_lambda');
         $status = true;
-        foreach ($invokes as $invoke){
-            if($invoke['template'] == self::get_template_name()){
-                $status = false;
-                break;
+        if(!is_null($invokes) ){
+            foreach ($invokes as $invoke){
+                if($invoke['template'] == self::get_template_name()){
+                    $status = false;
+                    break;
+                }
             }
         }
+
         if($status){
             $this->_run_lambda();
         }
@@ -89,7 +92,7 @@ class WP_Critical_CSS_AWS_Lambda{
             $invokes[] = [
                 'template' => self::get_template_name()
             ];
-            set_transient('invoke_lambda',$invokes);
+            set_transient('invokes_lambda',$invokes);
             return $invoke;
         }
         else{
