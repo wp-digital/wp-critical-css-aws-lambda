@@ -1,0 +1,19 @@
+{
+    "name": "redink-no/wp-critical-css-aws-lambda",
+    "type": "wordpress-muplugin",
+    "keywords": ["wordpress", "plugins"],
+    "authors": [
+        {
+            "name": "Vitalii Pylypenko",
+            "email": "vitalii.pylypenko@innocode.no"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.0",
+        "composer/installers": "~1.0",
+        "aws/aws-sdk-php": "^3.14"
+    },
+    "extra": {
+        "installer-name": "wp-critical-css-aws-lambda"
+    }
+}
