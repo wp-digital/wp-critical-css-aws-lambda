@@ -12,7 +12,8 @@ class WP_Critical_CSS_AWS_Lambda{
 
     public function load(){
 
-        if(self::test_defined_variables() == false){
+        if(!self::test_defined_variables())
+        {
             return false;
         }
 
@@ -24,43 +25,41 @@ class WP_Critical_CSS_AWS_Lambda{
             'region'  => AWS_LAMBDA_CSS_REGION,
             'version' => '2017-09-01',
         ]);
+        $sanitize_key = sanitize_key(self::get_template_name());
+        $invoke = get_transient( "invokes_lambda_critical_css_$sanitize_key" );
 
-        $invokes = get_transient('invokes_lambda');
-        $status = true;
-        if(!is_null($invokes) ){
-            foreach ($invokes as $invoke){
-                if($invoke['template'] == self::get_template_name()){
-                    $status = false;
-                    break;
-                }
-            }
-        }
-
-        if($status){
+        if(!$invoke )
+        {
             $this->_run_lambda();
         }
+
+
 
     }
 
     /**
      * @return bool
      */
-    public static function test_defined_variables(){
+    public static function test_defined_variables()
+    {
 
-       return defined('AWS_LAMBDA_CSS_KEY') && defined('AWS_LAMBDA_CSS_SECRET') && defined('AWS_LAMBDA_CSS_REGION' && defined('AWS_LAMBDA_CSS_BUCKET'));
+        return defined( 'AWS_LAMBDA_CSS_KEY' ) && defined( 'AWS_LAMBDA_CSS_SECRET' ) && defined( 'AWS_LAMBDA_CSS_REGION' && defined('AWS_LAMBDA_CSS_BUCKET' ));
 
     }
     /**
      * @return array with css url's
      */
-    public static function get_css_files(){
+    public static function get_css_files()
+    {
 
         global $wp_styles;
         $registered_styles = $wp_styles->registered;
         $css = [];
-        $handles = apply_filters('critical_css',[]);
-        foreach ($handles as $handle){
-            if(isset($registered_styles[$handle])){
+        $handles = apply_filters( 'critical_css',[] );
+        foreach ($handles as $handle)
+        {
+            if(isset($registered_styles[$handle]))
+            {
                 $css[] = $registered_styles[$handle]->src;
             }
         }
@@ -70,7 +69,8 @@ class WP_Critical_CSS_AWS_Lambda{
     /**
      * @return string template name
      */
-    public static function get_template_name(){
+    public static function get_template_name()
+    {
 
         global $template;
         $theme_directory = get_template_directory();
@@ -82,7 +82,8 @@ class WP_Critical_CSS_AWS_Lambda{
     /**
      * @return string link of current page
      */
-    public static function get_page_link(){
+    public static function get_page_link()
+    {
 
         $link = home_url($_SERVER['REQUEST_URI']);
         return $link;
@@ -92,21 +93,21 @@ class WP_Critical_CSS_AWS_Lambda{
     /**
      * @return \Aws\Result|bool
      */
-    protected function _run_lambda(){
-        $invokes = get_transient('invokes_lambda');
+    protected function _run_lambda()
+    {
         $function = $this->_get_lambda_function();
-        if(!is_null($this->_lambda_client)){
+        if(!is_null($this->_lambda_client))
+        {
             $invoke = $this->_lambda_client->invoke( [
                 'FunctionName' => $function,
                 'Payload'      =>json_encode($this->_get_lambda_args()),
             ] );
-            $invokes[] = [
-                'template' => self::get_template_name()
-            ];
-            set_transient('invokes_lambda',$invokes);
+            $sanitize_key = sanitize_key(self::get_template_name());
+            set_transient("invokes_lambda_crirical_css_$sanitize_key",$invoke);
             return $invoke;
         }
-        else{
+        else
+        {
             return false;
         }
 
@@ -115,7 +116,8 @@ class WP_Critical_CSS_AWS_Lambda{
     /**
      * @return array with arguments for LambdaClient
      */
-    protected static function _get_lambda_args(){
+    protected static function _get_lambda_args()
+    {
         $defaults = [
             'bucket'        => AWS_LAMBDA_CSS_BUCKET,
             'template_name' => self::get_template_name(),
