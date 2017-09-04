@@ -12,8 +12,7 @@ class WP_Critical_CSS_AWS_Lambda{
 
     public function load(){
 
-        if(!self::test_defined_variables())
-        {
+        if(!self::test_defined_variables()){
             return false;
         }
 
@@ -28,8 +27,7 @@ class WP_Critical_CSS_AWS_Lambda{
         $sanitize_key = sanitize_key(self::get_template_name());
         $invoke = get_transient( "invokes_lambda_critical_css_$sanitize_key" );
 
-        if(!$invoke )
-        {
+        if(!$invoke ) {
             $this->_run_lambda();
         }
 
@@ -43,7 +41,7 @@ class WP_Critical_CSS_AWS_Lambda{
     public static function test_defined_variables()
     {
 
-        return defined( 'AWS_LAMBDA_CSS_KEY' ) && defined( 'AWS_LAMBDA_CSS_SECRET' ) && defined( 'AWS_LAMBDA_CSS_REGION' && defined('AWS_LAMBDA_CSS_BUCKET' ));
+        return defined( 'AWS_LAMBDA_CSS_KEY' ) && defined( 'AWS_LAMBDA_CSS_SECRET' ) && defined( 'AWS_LAMBDA_CSS_REGION' ) && defined( 'AWS_LAMBDA_CSS_BUCKET' );
 
     }
     /**
@@ -55,11 +53,8 @@ class WP_Critical_CSS_AWS_Lambda{
         global $wp_styles;
         $registered_styles = $wp_styles->registered;
         $css = [];
-        $handles = apply_filters( 'critical_css',[] );
-        foreach ($handles as $handle)
-        {
-            if(isset($registered_styles[$handle]))
-            {
+        foreach (apply_filters( 'critical_css',[] ) as $handle){
+            if(isset($registered_styles[$handle])) {
                 $css[] = $registered_styles[$handle]->src;
             }
         }
@@ -71,12 +66,10 @@ class WP_Critical_CSS_AWS_Lambda{
      */
     public static function get_template_name()
     {
-
         global $template;
         $theme_directory = get_template_directory();
         $template_name = str_replace($theme_directory,'',$template);
         return $template_name;
-
     }
 
     /**
@@ -84,10 +77,8 @@ class WP_Critical_CSS_AWS_Lambda{
      */
     public static function get_page_link()
     {
-
-        $link = home_url($_SERVER['REQUEST_URI']);
+        $link = home_url( $_SERVER['REQUEST_URI'] );
         return $link;
-
     }
 
     /**
@@ -96,8 +87,7 @@ class WP_Critical_CSS_AWS_Lambda{
     protected function _run_lambda()
     {
         $function = $this->_get_lambda_function();
-        if(!is_null($this->_lambda_client))
-        {
+        if(!is_null($this->_lambda_client)){
             $invoke = $this->_lambda_client->invoke( [
                 'FunctionName' => $function,
                 'Payload'      =>json_encode($this->_get_lambda_args()),
@@ -106,8 +96,7 @@ class WP_Critical_CSS_AWS_Lambda{
             set_transient("invokes_lambda_crirical_css_$sanitize_key",$invoke);
             return $invoke;
         }
-        else
-        {
+        else{
             return false;
         }
 
