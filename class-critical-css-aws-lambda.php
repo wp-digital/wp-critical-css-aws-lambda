@@ -10,8 +10,8 @@ class WP_Critical_CSS_AWS_Lambda{
      */
     protected $_lambda_client = null;
 
-    public function load(){
-
+    public function load()
+    {
         if(!self::test_defined_variables()){
             return false;
         }
@@ -24,15 +24,13 @@ class WP_Critical_CSS_AWS_Lambda{
             'region'  => AWS_LAMBDA_CSS_REGION,
             'version' => '2017-09-01',
         ]);
+
         $sanitize_key = sanitize_key(self::get_template_name());
         $invoke = get_transient( "invokes_lambda_critical_css_$sanitize_key" );
 
         if(!$invoke ) {
             $this->_run_lambda();
         }
-
-
-
     }
 
     /**
@@ -40,16 +38,13 @@ class WP_Critical_CSS_AWS_Lambda{
      */
     public static function test_defined_variables()
     {
-
         return defined( 'AWS_LAMBDA_CSS_KEY' ) && defined( 'AWS_LAMBDA_CSS_SECRET' ) && defined( 'AWS_LAMBDA_CSS_REGION' ) && defined( 'AWS_LAMBDA_CSS_BUCKET' );
-
     }
     /**
      * @return array with css url's
      */
     public static function get_css_files()
     {
-
         global $wp_styles;
         $registered_styles = $wp_styles->registered;
         $css = [];
