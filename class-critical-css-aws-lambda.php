@@ -41,13 +41,14 @@ class WP_Critical_CSS_AWS_Lambda{
         }
 
     }
+
+    /**
+     * @return bool
+     */
     public static function test_defined_variables(){
-        if(defined('AWS_LAMBDA_CSS_KEY') && defined('AWS_LAMBDA_CSS_SECRET') && defined('AWS_LAMBDA_CSS_REGION' && defined('AWS_LAMBDA_CSS_BUCKET'))) {
-            return true;
-        }
-        else{
-            return false;
-        }
+
+       return defined('AWS_LAMBDA_CSS_KEY') && defined('AWS_LAMBDA_CSS_SECRET') && defined('AWS_LAMBDA_CSS_REGION' && defined('AWS_LAMBDA_CSS_BUCKET'));
+
     }
     /**
      * @return array with css url's
