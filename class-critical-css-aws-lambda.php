@@ -12,16 +12,19 @@ class WP_Critical_CSS_AWS_Lambda{
 
     public function load(){
 
-        if(defined('AWS_LAMBDA_CSS_KEY') && defined('AWS_LAMBDA_CSS_SECRET') && defined('AWS_LAMBDA_CSS_REGION')){
-            $this->_lambda_client = new LambdaClient([
-                'credentials' => array(
-                    'key'    => AWS_LAMBDA_CSS_KEY,
-                    'secret' => AWS_LAMBDA_CSS_SECRET,
-                ),
-                'region'  => AWS_LAMBDA_CSS_REGION,
-                'version' => '2017-09-01',
-            ]);
+        if(self::test_defined_variables() == false){
+            return false;
         }
+
+        $this->_lambda_client = new LambdaClient([
+            'credentials' => array(
+                'key'    => AWS_LAMBDA_CSS_KEY,
+                'secret' => AWS_LAMBDA_CSS_SECRET,
+            ),
+            'region'  => AWS_LAMBDA_CSS_REGION,
+            'version' => '2017-09-01',
+        ]);
+
         $invokes = get_transient('invokes_lambda');
         $status = true;
         if(!is_null($invokes) ){
@@ -38,7 +41,14 @@ class WP_Critical_CSS_AWS_Lambda{
         }
 
     }
-
+    public static function test_defined_variables(){
+        if(defined('AWS_LAMBDA_CSS_KEY') && defined('AWS_LAMBDA_CSS_SECRET') && defined('AWS_LAMBDA_CSS_REGION' && defined('AWS_LAMBDA_CSS_BUCKET'))) {
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
     /**
      * @return array with css url's
      */
@@ -87,7 +97,7 @@ class WP_Critical_CSS_AWS_Lambda{
         if(!is_null($this->_lambda_client)){
             $invoke = $this->_lambda_client->invoke( [
                 'FunctionName' => $function,
-                'Payload'      => defined('AWS_LAMBDA_CSS_BUCKET') ? json_encode($this->_get_lambda_args()):'',
+                'Payload'      =>json_encode($this->_get_lambda_args()),
             ] );
             $invokes[] = [
                 'template' => self::get_template_name()
