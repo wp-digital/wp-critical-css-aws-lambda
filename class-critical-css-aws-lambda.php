@@ -2,122 +2,155 @@
 
 use Aws\Lambda\LambdaClient;
 
-class WP_Critical_CSS_AWS_Lambda{
-
-
+/**
+ * Class WP_Critical_CSS_AWS_Lambda
+ */
+class WP_Critical_CSS_AWS_Lambda
+{
     /**
      * @var LambdaClient
      */
     protected $_lambda_client = null;
+    /**
+     * @var string
+     */
+    protected $_lambda_function = '';
+    /**
+     * @var string
+     */
+    protected $_template_name = '';
+    /**
+     * @var string
+     */
+    protected $_cache_key = '';
+    /**
+     * @var array
+     */
+    protected $_css_files = [];
+    /**
+     * @var string
+     */
+    protected $_url = '';
 
-    public function load()
+    public function __construct()
     {
-        if(!self::test_defined_variables()){
-            return false;
+        if ( static::has_required_constants() ) {
+            $this->_template_name = static::get_template_name();
+            $this->_cache_key = sanitize_key( 'aws_lambda_critical_css_' . sanitize_key( $this->_template_name ) );
+
+//            if ( !$invoke ) {
+                $this->_lambda_client = static::get_lambda_client();
+                $this->_lambda_function = static::get_lambda_function();
+                $this->_css_files = static::get_css_files();
+                $this->_url = static::get_current_url();
+//            }
         }
+    }
 
-        $this->_lambda_client = new LambdaClient([
-            'credentials' => array(
-                'key'    => AWS_LAMBDA_CSS_KEY,
-                'secret' => AWS_LAMBDA_CSS_SECRET,
-            ),
-            'region'  => AWS_LAMBDA_CSS_REGION,
-            'version' => '2017-09-01',
-        ]);
+    public function run()
+    {
+        if ( !is_null( $this->_lambda_client ) ) {
+            $invoke = $this->_lambda_client->invoke( [
+                'FunctionName' => $this->_lambda_function,
+                'Payload'      => json_encode( $this->_get_lambda_args() ),
+            ] );
 
-        $sanitize_key = sanitize_key(self::get_template_name());
-        $invoke = get_transient( "invokes_lambda_critical_css_$sanitize_key" );
-
-        if(!$invoke ) {
-            $this->_run_lambda();
+//            set_transient( $this->_cache_key, $invoke );
         }
     }
 
     /**
+     * Return Lambda arguments
+     *
+     * @return array
+     */
+    protected function _get_lambda_args()
+    {
+        return [
+            'bucket'        => AWS_LAMBDA_CRITICAL_CSS_BUCKET,
+            'template_name' => $this->_template_name,
+            'css_files'     => $this->_css_files,
+            'url'           => $this->_url,
+        ];
+    }
+
+    /**
+     * Check if all required constants are defined
+     *
      * @return bool
      */
-    public static function test_defined_variables()
+    public static function has_required_constants()
     {
-        return defined( 'AWS_LAMBDA_CSS_KEY' ) && defined( 'AWS_LAMBDA_CSS_SECRET' ) && defined( 'AWS_LAMBDA_CSS_REGION' ) && defined( 'AWS_LAMBDA_CSS_BUCKET' );
-    }
-    /**
-     * @return array with css url's
-     */
-    public static function get_css_files()
-    {
-        global $wp_styles;
-        $registered_styles = $wp_styles->registered;
-        $css = [];
-        foreach (apply_filters( 'critical_css',[] ) as $handle){
-            if(isset($registered_styles[$handle])) {
-                $css[] = $registered_styles[$handle]->src;
-            }
-        }
-        return $css;
+        return defined( 'AWS_LAMBDA_CRITICAL_CSS_KEY' ) && defined( 'AWS_LAMBDA_CRITICAL_CSS_SECRET' ) && defined( 'AWS_LAMBDA_CRITICAL_CSS_REGION' ) && defined( 'AWS_LAMBDA_CRITICAL_CSS_BUCKET' );
     }
 
     /**
-     * @return string template name
+     * Return AWS Lambda client
+     *
+     * @return \Aws\Lambda\LambdaClient
+     */
+    public static function get_lambda_client()
+    {
+        return new LambdaClient( [
+            'credentials' => [
+                'key'    => AWS_LAMBDA_CRITICAL_CSS_KEY,
+                'secret' => AWS_LAMBDA_CRITICAL_CSS_SECRET,
+            ],
+            'region'      => AWS_LAMBDA_CRITICAL_CSS_REGION,
+            'version'     => '2015-03-31',
+        ] );
+    }
+
+    /**
+     * Return AWS Lambda function name
+     *
+     * @return string
+     */
+    public static function get_lambda_function()
+    {
+        return defined( 'AWS_LAMBDA_CRITICAL_CSS_FUNCTION' ) ? AWS_LAMBDA_CRITICAL_CSS_FUNCTION : 'wordpress_critical_css';
+    }
+
+    /**
+     * Return current template name
+     *
+     * @return string
      */
     public static function get_template_name()
     {
         global $template;
-        $theme_directory = get_template_directory();
-        $template_name = str_replace($theme_directory,'',$template);
-        return $template_name;
+
+        return str_replace( get_template_directory(), '', $template );
     }
 
     /**
-     * @return string link of current page
+     * Return URL's of stylesheets which are used for critical path
+     *
+     * @return array
      */
-    public static function get_page_link()
+    public static function get_css_files()
     {
-        $link = home_url( $_SERVER['REQUEST_URI'] );
-        return $link;
-    }
+        global $wp_styles;
 
-    /**
-     * @return \Aws\Result|bool
-     */
-    protected function _run_lambda()
-    {
-        $function = $this->_get_lambda_function();
-        if(!is_null($this->_lambda_client)){
-            $invoke = $this->_lambda_client->invoke( [
-                'FunctionName' => $function,
-                'Payload'      =>json_encode($this->_get_lambda_args()),
-            ] );
-            $sanitize_key = sanitize_key(self::get_template_name());
-            set_transient("invokes_lambda_crirical_css_$sanitize_key",$invoke);
-            return $invoke;
-        }
-        else{
-            return false;
+        $registered_styles = $wp_styles->registered;
+        $css_files = [];
+
+        foreach ( apply_filters( 'aws_lambda_critical_css_files', [] ) as $handle ) {
+            if ( isset( $registered_styles[ $handle ] ) ) {
+                $css_files[] = $registered_styles[ $handle ]->src;
+            }
         }
 
+        return $css_files;
     }
 
     /**
-     * @return array with arguments for LambdaClient
+     * Return current URL
+     *
+     * @return string
      */
-    protected static function _get_lambda_args()
+    public static function get_current_url()
     {
-        $defaults = [
-            'bucket'        => AWS_LAMBDA_CSS_BUCKET,
-            'template_name' => self::get_template_name(),
-            'css_files'     => self::get_css_files(),
-            'page_url'      => self::get_page_link(),
-        ];
-        return $defaults;
+        return home_url( $_SERVER['REQUEST_URI'] );
     }
-
-    /**
-     * @return string with name function for LambdaClient
-     */
-    protected function _get_lambda_function()
-    {
-        return defined( 'AWS_LAMBDA_CSS_FUNCTION' ) ? AWS_LAMBDA_CSS_FUNCTION : 'wordpress_critical_css';
-    }
-
-
 }
