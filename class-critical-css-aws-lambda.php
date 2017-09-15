@@ -7,6 +7,7 @@ use Aws\Lambda\LambdaClient;
  */
 class WP_Critical_CSS_AWS_Lambda
 {
+    const KEY = 'aws_lambda_critical_css';
     /**
      * @var LambdaClient
      */
@@ -22,45 +23,87 @@ class WP_Critical_CSS_AWS_Lambda
     /**
      * @var string
      */
-    protected $_cache_key = '';
+    protected $_key = '';
     /**
      * @var array
      */
-    protected $_css_files = [];
+    protected $_styles = [];
     /**
      * @var string
      */
     protected $_url = '';
+    /**
+     * @var string
+     */
+    protected $_version = '';
 
     public function __construct()
     {
         if ( static::has_required_constants() ) {
             $this->_template_name = static::get_template_name();
-            $this->_cache_key = sanitize_key( 'aws_lambda_critical_css_' . sanitize_key( $this->_template_name ) );
+            $this->_key = static::KEY . '_' . sanitize_key( $this->_template_name );
+            $this->_styles = static::get_styles();
+            $this->_version = $this->_get_version();
 
-//            if ( !$invoke ) {
+            if ( false === ( $version = get_transient( $this->_key ) ) || $version != $this->_version ) {
                 $this->_lambda_client = static::get_lambda_client();
                 $this->_lambda_function = static::get_lambda_function();
-                $this->_css_files = static::get_css_files();
                 $this->_url = static::get_current_url();
-//            }
-        }
-    }
-
-    public function run()
-    {
-        if ( !is_null( $this->_lambda_client ) ) {
-            $invoke = $this->_lambda_client->invoke( [
-                'FunctionName' => $this->_lambda_function,
-                'Payload'      => json_encode( $this->_get_lambda_args() ),
-            ] );
-
-//            set_transient( $this->_cache_key, $invoke );
+            }
         }
     }
 
     /**
-     * Return Lambda arguments
+     * Invoke AWS Lambda function
+     *
+     * @return bool|string|\WP_Error
+     */
+    public function run()
+    {
+        if ( !is_null( $this->_lambda_client ) ) {
+            $result = $this->_lambda_client->invoke( [
+                'FunctionName' => $this->_lambda_function,
+                'Payload'      => json_encode( $this->_get_lambda_args() ),
+            ] );
+
+            if ( $result['StatusCode'] < WP_Http::OK && $result['StatusCode'] >= WP_Http::MULTIPLE_CHOICES ) {
+                return new WP_Error( static::KEY, $result['FunctionError'] );
+            }
+
+            set_transient( $this->_key, $this->_version );
+
+            return $this->_version;
+        }
+
+        return false;
+    }
+
+    /**
+     * Cron task
+     */
+    public function schedule_receiving()
+    {
+        wp_schedule_single_event( time() + 15 * MINUTE_IN_SECONDS, static::KEY, [
+            $this->_key,
+            $this->_version,
+
+        ] );
+    }
+
+    /**
+     * Return critical path version
+     *
+     * @return string
+     */
+    protected function _get_version()
+    {
+        return array_reduce( $this->_styles, function ( $version, array $style ) {
+            return "$version|{$style['handle']}:{$style['ver']}";
+        }, '' );
+    }
+
+    /**
+     * Return AWS Lambda arguments
      *
      * @return array
      */
@@ -69,8 +112,9 @@ class WP_Critical_CSS_AWS_Lambda
         return [
             'bucket'        => AWS_LAMBDA_CRITICAL_CSS_BUCKET,
             'template_name' => $this->_template_name,
-            'css_files'     => $this->_css_files,
+            'styles'        => array_column( $this->_styles, 'src' ),
             'url'           => $this->_url,
+            'version'       => $this->_version,
         ];
     }
 
@@ -128,20 +172,25 @@ class WP_Critical_CSS_AWS_Lambda
      *
      * @return array
      */
-    public static function get_css_files()
+    public static function get_styles()
     {
-        global $wp_styles;
+        global $wp_styles, $wp_version;
 
         $registered_styles = $wp_styles->registered;
-        $css_files = [];
+        $styles = [];
 
-        foreach ( apply_filters( 'aws_lambda_critical_css_files', [] ) as $handle ) {
+        foreach ( apply_filters( static::KEY . '_styles', [] ) as $handle ) {
             if ( isset( $registered_styles[ $handle ] ) ) {
-                $css_files[] = $registered_styles[ $handle ]->src;
+                $style = $registered_styles[ $handle ];
+                $styles[] = [
+                    'handle' => $style->handle,
+                    'src'    => $style->src,
+                    'ver'    => $style->ver ? $style->ver : $wp_version,
+                ];
             }
         }
 
-        return $css_files;
+        return $styles;
     }
 
     /**
