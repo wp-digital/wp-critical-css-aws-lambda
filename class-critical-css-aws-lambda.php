@@ -119,7 +119,7 @@ class WP_Critical_CSS_AWS_Lambda
 
         if ( !empty( $stylesheet ) ) : ?>
             <style>
-                <?= strip_tags( $stylesheet ) ?>
+                <?= apply_filters( static::key( 'stylesheet' ), strip_tags( $stylesheet ) ) ?>
             </style>
         <?php endif;
     }
@@ -359,7 +359,7 @@ class WP_Critical_CSS_AWS_Lambda
      */
     public static function get_site_key()
     {
-        return static::sanitize_site_key( get_site_url() );
+        return static::sanitize_environment_key( get_site_url() );
     }
 
     /**
@@ -435,7 +435,7 @@ class WP_Critical_CSS_AWS_Lambda
      *
      * @return string
      */
-    public static function sanitize_site_key( $key )
+    public static function sanitize_environment_key( $key )
     {
         return preg_replace( '/[^a-zA-Z0-9_]/', '', $key );
     }
