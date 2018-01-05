@@ -46,6 +46,10 @@ class WP_Critical_CSS_AWS_Lambda
      * @var string
      */
     protected $_hash = '';
+    /**
+     * @var bool
+     */
+    protected $_is_printed = false;
 
     public function __construct()
     {
@@ -121,7 +125,8 @@ class WP_Critical_CSS_AWS_Lambda
             <style>
                 <?= apply_filters( static::key( 'stylesheet' ), strip_tags( $stylesheet ) ) ?>
             </style>
-        <?php endif;
+            <?php $this->_is_printed = true;
+        endif;
     }
 
     public function register_rest_route()
@@ -168,6 +173,14 @@ class WP_Critical_CSS_AWS_Lambda
                 ],
             ] );
         }
+    }
+
+    /**
+     * @return bool
+     */
+    public function is_printed()
+    {
+        return $this->_is_printed;
     }
 
     /**
