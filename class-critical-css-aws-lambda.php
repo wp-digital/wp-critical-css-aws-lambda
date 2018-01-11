@@ -47,6 +47,9 @@ class WP_Critical_CSS_AWS_Lambda
      */
     protected $_hash = '';
 
+    /**
+     * WP_Critical_CSS_AWS_Lambda constructor.
+     */
     public function __construct()
     {
         $this->_styles = static::get_styles();
@@ -75,6 +78,9 @@ class WP_Critical_CSS_AWS_Lambda
         }
     }
 
+    /**
+     * Initialize
+     */
     public function init()
     {
         if ( !empty( $this->_styles ) && static::has_required_constants() ) {
@@ -90,7 +96,7 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
-     * Invoke AWS Lambda function
+     * Schedule cron task with AWS Lambda function
      *
      * @return bool|string|\WP_Error
      */
@@ -113,10 +119,16 @@ class WP_Critical_CSS_AWS_Lambda
         return false;
     }
 
+    /**
+     * Print critical path stylesheet
+     */
     public function print_stylesheet()
     {
         $stylesheet = get_option( "{$this->_key}_stylesheet" );
 
+        // Usually stylesheet files are cached on production, so there is no reason to use critical css every time.
+        // Mechanism with checking of referer is ugly and used as a default, more pretty solution will be to use different hashes in case when e.g. Varnish is used on server.
+        // Anyway developer may control that with filter - 'aws_lambda_critical_css_can_print'.
         if ( !empty( $stylesheet ) && apply_filters( static::key( 'can_print' ), !static::has_internal_referer() ) ) : ?>
             <style>
                 <?= apply_filters( static::key( 'stylesheet' ), strip_tags( $stylesheet ) ) ?>
@@ -125,6 +137,9 @@ class WP_Critical_CSS_AWS_Lambda
         endif;
     }
 
+    /**
+     * Register REST API route for receiving critical path stylesheet from AWS Lambda function
+     */
     public function register_rest_route()
     {
         if ( !empty( $this->_styles ) && static::has_required_constants() ) {
@@ -172,6 +187,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Check permissions for REST API endpoint
+     *
      * @param WP_REST_Request $request
      *
      * @return bool|WP_Error
@@ -188,6 +205,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Create critical path stylesheet
+     *
      * @param WP_REST_Request $request
      *
      * @return bool|WP_Error
@@ -209,6 +228,9 @@ class WP_Critical_CSS_AWS_Lambda
         return update_option( "{$key}_stylesheet", $request->get_param( 'stylesheet' ), false );
     }
 
+    /**
+     * Initialize AWS Lambda client
+     */
     protected function _init_lambda()
     {
         $this->_lambda_client = static::get_lambda_client();
@@ -257,7 +279,7 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
-     * Return AWS Lambda arguments
+     * Return AWS Lambda function arguments
      *
      * @return array
      */
@@ -274,6 +296,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Generate credentials for AWS Lambda function, send to environments variables and save hash to WordPress options
+     *
      * @return bool
      */
     protected function _generate_credentials()
@@ -296,7 +320,7 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
-     *
+     * Invoke AWS Lambda function
      *
      * @param string $key
      * @param string $hash
@@ -356,6 +380,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Return site key which is prepared for using as environment variable of AWS Lambda function
+     *
      * @return string
      */
     public static function get_site_key()
@@ -376,6 +402,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Return list of stylesheets for critical path
+     *
      * @return array
      */
     public static function get_styles()
@@ -394,6 +422,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Return prefixed and sanitized key
+     *
      * @param string $key
      *
      * @return string
@@ -404,6 +434,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Return REST API namespace
+     *
      * @return string
      */
     public static function get_api_namespace()
@@ -412,6 +444,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Return REST API URL
+     *
      * @param string $endpoint
      *
      * @return string
@@ -422,6 +456,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Check if string is md5 hash
+     *
      * @param string $hash
      *
      * @return int
@@ -432,6 +468,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Sanitize key for using as environment variable of AWS Lambda function
+     *
      * @param string $key
      *
      * @return string
@@ -442,6 +480,8 @@ class WP_Critical_CSS_AWS_Lambda
     }
 
     /**
+     * Check if referer is internal
+     *
      * @return bool
      */
     public static function has_internal_referer()
