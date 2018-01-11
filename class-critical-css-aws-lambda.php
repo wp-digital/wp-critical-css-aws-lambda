@@ -117,7 +117,7 @@ class WP_Critical_CSS_AWS_Lambda
     {
         $stylesheet = get_option( "{$this->_key}_stylesheet" );
 
-        if ( !empty( $stylesheet ) ) : ?>
+        if ( !empty( $stylesheet ) && apply_filters( static::key( 'can_print' ), !static::has_internal_referer() ) ) : ?>
             <style>
                 <?= apply_filters( static::key( 'stylesheet' ), strip_tags( $stylesheet ) ) ?>
             </style>
@@ -439,5 +439,16 @@ class WP_Critical_CSS_AWS_Lambda
     public static function sanitize_environment_key( $key )
     {
         return preg_replace( '/[^a-zA-Z0-9_]/', '', $key );
+    }
+
+    /**
+     * @return bool
+     */
+    public static function has_internal_referer()
+    {
+        $referer = wp_get_raw_referer();
+        $home_url = home_url();
+
+        return false !== $referer && substr( $referer, 0, strlen( $home_url ) ) === $home_url;
     }
 }
