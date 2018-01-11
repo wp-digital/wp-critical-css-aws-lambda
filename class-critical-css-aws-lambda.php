@@ -46,10 +46,6 @@ class WP_Critical_CSS_AWS_Lambda
      * @var string
      */
     protected $_hash = '';
-    /**
-     * @var bool
-     */
-    protected $_is_printed = false;
 
     public function __construct()
     {
@@ -125,7 +121,7 @@ class WP_Critical_CSS_AWS_Lambda
             <style>
                 <?= apply_filters( static::key( 'stylesheet' ), strip_tags( $stylesheet ) ) ?>
             </style>
-            <?php $this->_is_printed = true;
+            <?php do_action( static::key( 'printed' ), $this->_key, $this->_hash );
         endif;
     }
 
@@ -173,14 +169,6 @@ class WP_Critical_CSS_AWS_Lambda
                 ],
             ] );
         }
-    }
-
-    /**
-     * @return bool
-     */
-    public function is_printed()
-    {
-        return $this->_is_printed;
     }
 
     /**
@@ -323,8 +311,8 @@ class WP_Critical_CSS_AWS_Lambda
             'Payload'      => json_encode( $args ),
         ] );
 
-        if ( $result[ 'StatusCode' ] < WP_Http::OK || $result[ 'StatusCode' ] >= WP_Http::MULTIPLE_CHOICES ) {
-            return new WP_Error( static::KEY, $result[ 'FunctionError' ] );
+        if ( $result['StatusCode'] < WP_Http::OK || $result['StatusCode'] >= WP_Http::MULTIPLE_CHOICES ) {
+            return new WP_Error( static::KEY, $result['FunctionError'] );
         }
 
         return set_transient( $key, $hash, DAY_IN_SECONDS / 2 );
