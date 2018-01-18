@@ -331,8 +331,9 @@ class WP_Critical_CSS_AWS_Lambda
     protected function _run( $key, $hash, $args )
     {
         $result = $this->_lambda_client->invoke( [
-            'FunctionName' => $this->_lambda_function,
-            'Payload'      => json_encode( $args ),
+            'FunctionName'   => $this->_lambda_function,
+            'Payload'        => json_encode( $args ),
+            'InvocationType' => 'Event',
         ] );
 
         if ( $result['StatusCode'] < WP_Http::OK || $result['StatusCode'] >= WP_Http::MULTIPLE_CHOICES ) {
