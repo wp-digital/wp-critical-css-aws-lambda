@@ -127,9 +127,8 @@ class WP_Critical_CSS_AWS_Lambda
         $stylesheet = get_option( "{$this->_key}_stylesheet" );
 
         // Usually stylesheet files are cached on production, so there is no reason to use critical css every time.
-        // Mechanism with checking of referer is ugly and used as a default, more pretty solution will be to use different hashes in case when e.g. Varnish is used on server.
-        // Anyway developer may control that with filter - 'aws_lambda_critical_css_can_print'.
-        if ( !empty( $stylesheet ) && apply_filters( static::key( 'can_print' ), !static::has_internal_referer() ) ) : ?>
+        // Developer may control that with filters e.g. 'aws_lambda_critical_css_can_print', 'aws_lambda_critical_css_can_printed'.
+        if ( !empty( $stylesheet ) && apply_filters( static::key( 'can_print' ), true, $this->_key, $this->_hash ) ) : ?>
             <style>
                 <?= apply_filters( static::key( 'stylesheet' ), strip_tags( $stylesheet ) ) ?>
             </style>
@@ -478,18 +477,5 @@ class WP_Critical_CSS_AWS_Lambda
     public static function sanitize_environment_key( $key )
     {
         return preg_replace( '/[^a-zA-Z0-9_]/', '', $key );
-    }
-
-    /**
-     * Check if referer is internal
-     *
-     * @return bool
-     */
-    public static function has_internal_referer()
-    {
-        $referer = wp_get_raw_referer();
-        $home_url = home_url();
-
-        return false !== $referer && substr( $referer, 0, strlen( $home_url ) ) === $home_url;
     }
 }
