@@ -127,7 +127,7 @@ class WP_Critical_CSS_AWS_Lambda
         $stylesheet = get_option( "{$this->_key}_stylesheet" );
 
         // Usually stylesheet files are cached on production, so there is no reason to use critical css every time.
-        // Developer may control that with filters e.g. 'aws_lambda_critical_css_can_print', 'aws_lambda_critical_css_can_printed'.
+        // Developer may control that with filters e.g. 'aws_lambda_critical_css_can_print', 'aws_lambda_critical_css_printed'.
         if ( !empty( $stylesheet ) && apply_filters( static::key( 'can_print' ), true, $this->_key, $this->_hash ) ) : ?>
             <style>
                 <?= apply_filters( static::key( 'stylesheet' ), strip_tags( $stylesheet ) ) ?>
