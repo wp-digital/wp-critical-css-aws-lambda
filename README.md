@@ -29,6 +29,7 @@ define( 'AWS_LAMBDA_CRITICAL_CSS_FUNCTION', '' ); // Optional, default value is 
 ````
 
 Create Lambda function on AWS and upload code. 
+Expected default name is **wordpress_critical_css-production** but you may use any other.
 You may use the following [AWS Lambda Critical CSS](https://github.com/innocode-digital/aws-lambda-critical-css) 
 or create your own.
 
