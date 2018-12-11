@@ -1,6 +1,6 @@
 {
     "name": "redink-no/wp-critical-css-aws-lambda",
-    "type": "wordpress-muplugin",
+    "type": "wordpress-mu-plugin",
     "keywords": ["wordpress", "plugins"],
     "authors": [
         {
