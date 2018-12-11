@@ -88,7 +88,7 @@ add_action( 'aws_lambda_critical_css_printed', function ( $key, $hash ) {
 
 ### Caveats
 
-Relative paths to custom fonts or images in stylesheets should be changed to absolute:
+- Relative paths to custom fonts or images in stylesheets should be changed to absolute:
 
 ````
 add_filter( 'aws_lambda_critical_css_stylesheet', function ( $stylesheet ) {
@@ -106,3 +106,6 @@ add_filter( 'aws_lambda_critical_css_stylesheet', function ( $stylesheet ) {
     return $stylesheet;
 } );
 ````
+
+- This plugin is only for generating and rendering critical CSS, 
+to defer CSS files you may use [Deferred loading](https://github.com/innocode-digital/wp-deferred-loading).
