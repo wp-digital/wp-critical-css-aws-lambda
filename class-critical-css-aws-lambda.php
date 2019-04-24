@@ -69,12 +69,12 @@ class WP_Critical_CSS_AWS_Lambda
                 wp_schedule_single_event( time(), $secret_key );
             }
 
-            add_action( static::KEY, function ( $key, $hash, $args ) {
+            add_action( static::KEY, function ( $args ) {
                 if ( static::has_required_constants() ) {
                     $this->_init_lambda();
-                    $this->_run( $key, $hash, $args );
+                    $this->_run( $args );
                 }
-            }, 10, 3 );
+            } );
         }
     }
 
@@ -108,10 +108,9 @@ class WP_Critical_CSS_AWS_Lambda
             && get_option( $this->_key ) !== $this->_hash
         ) {
             wp_schedule_single_event( time() + 10, static::KEY, [
-                $this->_key,
-                $this->_hash,
                 $this->_get_lambda_args(),
             ] );
+            set_transient( $this->_key, $this->_hash, DAY_IN_SECONDS / 2 );
 
             return $this->_hash;
         }
@@ -321,13 +320,11 @@ class WP_Critical_CSS_AWS_Lambda
     /**
      * Invoke AWS Lambda function
      *
-     * @param string $key
-     * @param string $hash
-     * @param array  $args
+     * @param array $args
      *
      * @return bool|WP_Error
      */
-    protected function _run( $key, $hash, $args )
+    protected function _run( $args )
     {
         $result = $this->_lambda_client->invoke( [
             'FunctionName'   => $this->_lambda_function,
@@ -339,7 +336,7 @@ class WP_Critical_CSS_AWS_Lambda
             return new WP_Error( static::KEY, $result['FunctionError'] );
         }
 
-        return set_transient( $key, $hash, DAY_IN_SECONDS / 2 );
+        return true;
     }
 
     /**
