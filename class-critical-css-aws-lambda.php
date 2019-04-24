@@ -386,7 +386,18 @@ class WP_Critical_CSS_AWS_Lambda
      */
     public static function get_site_key()
     {
-        return static::sanitize_environment_key( home_url() );
+        $home_url = wp_parse_url( home_url() );
+        $site_key = '';
+
+        if ( isset( $home_url['host'] ) ) {
+            $site_key .= $home_url['host'];
+        }
+
+        if ( isset( $home_url['path'] ) ) {
+            $site_key .= $home_url['path'];
+        }
+
+        return static::sanitize_environment_key( $site_key );
     }
 
     /**
