@@ -4,11 +4,15 @@
     "keywords": ["wordpress", "plugins"],
     "authors": [
         {
+            "name": "Innocode",
+            "email": "post@innocode.no",
+            "homepage": "https://innocode.com/"
+        }, {
             "name": "Vitalii Pylypenko",
             "email": "vitalii.pylypenko@innocode.no"
         }, {
             "name": "Viktor Kuliebiakin",
-            "email": "viktor.kuliebiakin@innocode.no"
+            "email": "kuliebiakin@gmail.com"
         }
     ],
     "require": {

@@ -386,7 +386,7 @@ class WP_Critical_CSS_AWS_Lambda
      */
     public static function get_site_key()
     {
-        return static::sanitize_environment_key( get_site_url() );
+        return static::sanitize_environment_key( home_url() );
     }
 
     /**
