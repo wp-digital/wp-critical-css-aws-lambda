@@ -54,28 +54,35 @@ class WP_Critical_CSS_AWS_Lambda
     {
         $this->_styles = static::get_styles();
 
-        if ( !empty( $this->_styles ) ) {
-            $this->_site_key = static::get_site_key();
-            $secret_key = static::key( 'secret' );
-
-            add_action( $secret_key, function () {
-                if ( static::has_required_constants() ) {
-                    $this->_init_lambda();
-                    $this->_generate_credentials();
-                }
-            } );
-
-            if ( false === get_transient( $secret_key ) ) {
-                wp_schedule_single_event( time(), $secret_key );
-            }
-
-            add_action( static::KEY, function ( $args ) {
-                if ( static::has_required_constants() ) {
-                    $this->_init_lambda();
-                    $this->_run( $args );
-                }
-            } );
+        if ( empty( $this->_styles ) ) {
+            return;
         }
+
+        try {
+            $this->_site_key = static::get_site_key();
+        } catch ( Exception $exception ) {
+            return;
+        }
+
+        $secret_key = static::key( 'secret' );
+
+        add_action( $secret_key, function () {
+            if ( static::has_required_constants() ) {
+                $this->_init_lambda();
+                $this->_generate_credentials();
+            }
+        } );
+
+        if ( false === get_transient( $secret_key ) ) {
+            wp_schedule_single_event( time(), $secret_key );
+        }
+
+        add_action( static::KEY, function ( $args ) {
+            if ( static::has_required_constants() ) {
+                $this->_init_lambda();
+                $this->_run( $args );
+            }
+        } );
     }
 
     /**
@@ -358,10 +365,10 @@ class WP_Critical_CSS_AWS_Lambda
     {
         return new LambdaClient( [
             'credentials' => [
-                'key'    => AWS_LAMBDA_CRITICAL_CSS_KEY,
-                'secret' => AWS_LAMBDA_CRITICAL_CSS_SECRET,
+                'key'    => defined( 'AWS_LAMBDA_CRITICAL_CSS_KEY' ) ? AWS_LAMBDA_CRITICAL_CSS_KEY : '',
+                'secret' => defined( 'AWS_LAMBDA_CRITICAL_CSS_SECRET' ) ? AWS_LAMBDA_CRITICAL_CSS_SECRET : '',
             ],
-            'region'      => AWS_LAMBDA_CRITICAL_CSS_REGION,
+            'region'      => defined( 'AWS_LAMBDA_CRITICAL_CSS_REGION' ) ? AWS_LAMBDA_CRITICAL_CSS_REGION : '',
             'version'     => '2015-03-31',
         ] );
     }
@@ -380,6 +387,8 @@ class WP_Critical_CSS_AWS_Lambda
      * Return site key which is prepared for using as environment variable of AWS Lambda function
      *
      * @return string
+     *
+     * @throws Exception
      */
     public static function get_site_key()
     {
@@ -478,12 +487,24 @@ class WP_Critical_CSS_AWS_Lambda
     /**
      * Sanitize key for using as environment variable of AWS Lambda function
      *
-     * @param string $key
+     * @param $key
      *
      * @return string
+     *
+     * @throws Exception
      */
     public static function sanitize_environment_key( $key )
     {
-        return preg_replace( '/[^a-zA-Z0-9_]/', '', $key );
+        $key = strtolower( preg_replace( '/[^a-zA-Z0-9_]/', '', $key ) );
+
+        if ( $key === '' ) {
+            throw new Exception( 'Bad key value.' );
+        }
+
+        if ( isset( $key[0] ) && ctype_digit( $key[0] ) ) {
+            $key = "a$key";
+        }
+
+        return $key;
     }
 }

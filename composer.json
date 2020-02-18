@@ -1,26 +1,32 @@
 {
-    "name": "redink-no/wp-critical-css-aws-lambda",
-    "type": "wordpress-mu-plugin",
-    "keywords": ["wordpress", "plugins"],
-    "authors": [
-        {
-            "name": "Innocode",
-            "email": "post@innocode.no",
-            "homepage": "https://innocode.com/"
-        }, {
-            "name": "Vitalii Pylypenko",
-            "email": "vitalii.pylypenko@innocode.no"
-        }, {
-            "name": "Viktor Kuliebiakin",
-            "email": "kuliebiakin@gmail.com"
-        }
-    ],
-    "require": {
-        "php": ">=5.5.0",
-        "composer/installers": "~1.0",
-        "aws/aws-sdk-php": "^3.14"
+  "name": "innocode-digital/wp-critical-css-aws-lambda",
+  "type": "wordpress-muplugin",
+  "description": "WordPress plugin for generating critical stylesheets for templates via AWS Lambda.",
+  "license": "GPL-2.0+",
+  "keywords": [
+    "wordpress",
+    "plugins"
+  ],
+  "authors": [
+    {
+      "name": "Innocode",
+      "email": "post@innocode.no",
+      "homepage": "https://innocode.com/"
     },
-    "extra": {
-        "installer-name": "wp-critical-css-aws-lambda"
+    {
+      "name": "Vitalii Pylypenko",
+      "email": "vitalii.pylypenko@innocode.no"
+    },
+    {
+      "name": "Viktor Kuliebiakin",
+      "email": "kuliebiakin@gmail.com"
     }
+  ],
+  "require": {
+    "php": ">=7.0",
+    "composer/installers": "~1.0",
+    "aws/aws-sdk-php": "^3.14",
+    "ext-ctype": "*",
+    "ext-json": "*"
+  }
 }
