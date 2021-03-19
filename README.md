@@ -1,22 +1,34 @@
-## AWS Lambda Critical CSS
+# AWS Lambda Critical CSS
 
 ### Description
 
 WordPress plugin for generating critical stylesheets for templates via AWS Lambda.
+See also [AWS Lambda Critical CSS](https://github.com/innocode-digital/aws-lambda-critical-css).
 
 ### Install
 
-Clone this repo to `wp-content/plugins/`:
+- Preferable way is to use [Composer](https://getcomposer.org/):
 
-````
-cd wp-content/plugins/
-git clone git@github.com:innocode-digital/wp-critical-css-aws-lambda.git
-````
+    ````
+    composer require innocode-digital/wp-critical-css-aws-lambda
+    ````
 
-Activate **AWS Lambda Critical CSS** from Plugins page 
+  By default, it will be installed as [Must Use Plugin](https://codex.wordpress.org/Must_Use_Plugins).
+  It's possible to control with `extra.installer-paths` in `composer.json`.
+
+- Alternate way is to clone this repo to `wp-content/mu-plugins/` or `wp-content/plugins/`:
+
+    ````
+    cd wp-content/plugins/
+    git clone git@github.com:innocode-digital/wp-critical-css-aws-lambda.git
+    cd wp-critical-css-aws-lambda/
+    composer install
+    ````
+
+If plugin was installed as regular plugin then activate **AWS Lambda Critical CSS** from Plugins page
 or [WP-CLI](https://make.wordpress.org/cli/handbook/): `wp plugin activate wp-critical-css-aws-lambda`.
 
-Also you could install it as a [Must Use Plugin](https://codex.wordpress.org/Must_Use_Plugins).
+### Usage
 
 Add the following constants to `wp-config.php`:
 
@@ -25,13 +37,11 @@ define( 'AWS_LAMBDA_CRITICAL_CSS_KEY', '' );
 define( 'AWS_LAMBDA_CRITICAL_CSS_SECRET', '' );
 define( 'AWS_LAMBDA_CRITICAL_CSS_REGION', '' ); // e.g. eu-west-1
 
-define( 'AWS_LAMBDA_CRITICAL_CSS_FUNCTION', '' ); // Optional, default value is "wordpress_critical_css-production"
+define( 'AWS_LAMBDA_CRITICAL_CSS_FUNCTION', '' ); // Optional, default value is "critical-css-production-processor"
 ````
 
-Create Lambda function on AWS and upload code. 
-Expected default name is **wordpress_critical_css-production** but you may use any other.
-You may use the following [AWS Lambda Critical CSS](https://github.com/innocode-digital/aws-lambda-critical-css) 
-or create your own.
+Create serverless function on your favorite service. Expected default name is **critical-css-production-processor**
+but you may use any other. There is a prepared function [AWS Lambda Critical CSS](https://github.com/innocode-digital/aws-lambda-critical-css).
 
 ### Usage
 
@@ -41,7 +51,7 @@ To generate critical CSS from enqueued styles:
 add_filter( 'aws_lambda_critical_css_styles', function () {
     return [
         // List of enqueued styles. 
-        // You need to specify styles which are probably needed for critical CSS.
+        // Specify styles which you think are needed for critical CSS.
     ];
 } );
 ````
@@ -51,16 +61,16 @@ It's possible to use following hooks for loading inline critical CSS into HTML m
 ````
 add_filter( 'aws_lambda_critical_css_can_print', function ( $can_print, $key, $hash ) {
     // Fires before rendering critical CSS,
-    // pass true or false to render or not
+    // pass true or false to render or not.
     return true | false;
 }, 10, 3 );
 
 add_action( 'aws_lambda_critical_css_printed', function ( $key, $hash ) {
-    // Fires after rendering critical CSS
+    // Fires after rendering critical CSS.
 }, 10, 2 );
 ```` 
 
-Basic example:
+#### Basic example
 
 ````
 add_filter( 'aws_lambda_critical_css_can_print', function ( $can_print, $key, $hash ) {
@@ -72,7 +82,7 @@ add_filter( 'aws_lambda_critical_css_can_print', function ( $can_print, $key, $h
 add_action( 'aws_lambda_critical_css_printed', function ( $key, $hash ) {
     $path = '/';
 
-    if ( is_multisite() && !is_subdomain_install() ) {
+    if ( is_multisite() && ! is_subdomain_install() ) {
         $path .= trim( get_blog_details( get_current_blog_id() )->path, '/' );
     }
     
@@ -107,5 +117,5 @@ add_filter( 'aws_lambda_critical_css_stylesheet', function ( $stylesheet ) {
 } );
 ````
 
-- This plugin is only for generating and rendering critical CSS, 
-to defer CSS files you may use [Deferred loading](https://github.com/innocode-digital/wp-deferred-loading).
+- This plugin is only for generating and rendering critical CSS,
+  to defer CSS files you may use [Deferred loading](https://github.com/innocode-digital/wp-deferred-loading).

@@ -26,7 +26,7 @@ class Lambda
     /**
      * @var string
      */
-    protected $function = 'wordpress_critical_css-production';
+    protected $function = 'critical-css-production-processor';
     /**
      * @var LambdaClient
      */

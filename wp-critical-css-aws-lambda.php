@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AWS Lambda Critical CSS
  * Description: Generates critical stylesheets for templates via AWS Lambda.
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author: Innocode
  * Author URI: https://innocode.com
  * Tested up to: 5.6.2

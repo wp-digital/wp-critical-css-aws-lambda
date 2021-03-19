@@ -1,6 +1,6 @@
 {
   "name": "innocode-digital/wp-critical-css-aws-lambda",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "wordpress-muplugin",
   "description": "Generates critical stylesheets for templates via AWS Lambda.",
   "license": "GPL-2.0+",
