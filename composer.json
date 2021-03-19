@@ -1,12 +1,9 @@
 {
   "name": "innocode-digital/wp-critical-css-aws-lambda",
+  "version": "2.0.0",
   "type": "wordpress-muplugin",
-  "description": "WordPress plugin for generating critical stylesheets for templates via AWS Lambda.",
+  "description": "Generates critical stylesheets for templates via AWS Lambda.",
   "license": "GPL-2.0+",
-  "keywords": [
-    "wordpress",
-    "plugins"
-  ],
   "authors": [
     {
       "name": "Innocode",
@@ -23,10 +20,15 @@
     }
   ],
   "require": {
-    "php": ">=7.0",
-    "composer/installers": "~1.0",
-    "aws/aws-sdk-php": "^3.14",
+    "php": ">=7.1",
+    "ext-json": "*",
     "ext-ctype": "*",
-    "ext-json": "*"
+    "aws/aws-sdk-php": "^3.14",
+    "composer/installers": "~1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Innocode\\CriticalCSSAWSLambda\\": "src/"
+    }
   }
 }
