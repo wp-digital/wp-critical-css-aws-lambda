@@ -33,9 +33,10 @@ class RESTController extends WP_REST_Controller
             $this->namespace,
             "/$this->rest_base/stylesheet",
             [
-                'methods'  => WP_REST_Server::CREATABLE,
-                'callback' => [ $this, 'create_item' ],
-                'args'      => [
+                'methods'             => WP_REST_Server::CREATABLE,
+                'permission_callback' => [ $this, 'create_item_permissions_check' ],
+                'callback'            => [ $this, 'create_item' ],
+                'args'                => [
                     'key'        => [
                         'required'          => true,
                         'validate_callback' => function ( $key ) {
@@ -55,11 +56,7 @@ class RESTController extends WP_REST_Controller
                         },
                     ],
                     'secret'     => [
-                        'required'          => true,
-                        'validate_callback' => function ( $secret ) {
-                            return false !== ( $secret_hash = get_transient( 'aws_lambda_critical_css_secret' ) ) &&
-                                wp_check_password( $secret, $secret_hash );
-                        },
+                        'required' => true,
                     ],
                 ],
             ]
@@ -75,6 +72,32 @@ class RESTController extends WP_REST_Controller
     public function url( string $path ) : string
     {
         return rest_url( "/$this->namespace/$this->rest_base/" . ltrim( $path, '/' ) );
+    }
+
+    /**
+     * Checks if a given request has access to create items.
+     *
+     * @param WP_REST_Request $request
+     * @return true|WP_Error
+     */
+    public function create_item_permissions_check( $request )
+    {
+        $secret_hash_key = 'aws_lambda_critical_css_secret_' . $request->get_param( 'key' );
+
+        if (
+            false === ( $secret_hash = get_transient( $secret_hash_key ) ) ||
+            ! wp_check_password( $request->get_param( 'secret' ), $secret_hash )
+        ) {
+            return new WP_Error(
+                'rest_innocode_aws_lambda_critical_css_cannot_create_stylesheet',
+                __( 'Sorry, you are not allowed to create critical stylesheet.', 'innocode-aws-lambda-critical-css' ),
+                [
+                    'status' => WP_Http::UNAUTHORIZED,
+                ]
+            );
+        }
+
+        return true;
     }
 
     /**
@@ -100,7 +123,7 @@ class RESTController extends WP_REST_Controller
 
         update_option( "aws_lambda_critical_css_$key", $hash );
         delete_transient( "aws_lambda_critical_css_$key" );
-        delete_transient( 'aws_lambda_critical_css_secret' );
+        delete_transient( "aws_lambda_critical_css_secret_$key" );
 
         $updated = update_option(
             "aws_lambda_critical_css_{$key}_stylesheet",

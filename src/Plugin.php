@@ -84,7 +84,7 @@ final class Plugin
         add_action( 'wp_enqueue_scripts', [ $this, 'init_stylesheet' ], PHP_INT_MAX );
         add_action( 'wp_head', [ $this, 'schedule_lambda' ], 2 );
         add_action( 'wp_head', [ $this, 'print_stylesheet' ], 3 );
-        add_action( 'aws_lambda_critical_css', [ $this, 'invoke_lambda' ], 10, 6 );
+        add_action( 'aws_lambda_critical_css', [ $this, 'invoke_lambda' ], 10, 5 );
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
     }
 
@@ -132,19 +132,14 @@ final class Plugin
             return;
         }
 
-        $secret = wp_generate_password( 32, true, true );
-        $expiration = 20 * MINUTE_IN_SECONDS;
-
-        set_transient( "aws_lambda_critical_css_$template_name", $new_hash, $expiration );
-        set_transient( 'aws_lambda_critical_css_secret', wp_hash_password( $secret ), $expiration );
+        set_transient( "aws_lambda_critical_css_$template_name", $new_hash, 20 * MINUTE_IN_SECONDS );
 
         wp_schedule_single_event( time(), 'aws_lambda_critical_css', [
             Helpers::get_current_url(),
             $template_name,
             $stylesheet->get_sources(),
             $new_hash,
-            $this->get_rest_controller()->url( 'stylesheet' ),
-            $secret
+            $this->get_rest_controller()->url( 'stylesheet' )
         ] );
     }
 
@@ -156,19 +151,17 @@ final class Plugin
      * @param array  $styles
      * @param string $hash
      * @param string $return_url
-     * @param string $secret
      */
-    public function invoke_lambda(
-        string $url,
-        string $key,
-        array $styles,
-        string $hash,
-        string $return_url,
-        string $secret
-    )
+    public function invoke_lambda( string $url, string $key, array $styles, string $hash, string $return_url )
     {
         $lambda = $this->get_lambda();
         $lambda->init();
+
+        $secret = wp_generate_password( 32, true, true );
+        $secret_hash = wp_hash_password( $secret );
+
+        set_transient( "aws_lambda_critical_css_secret_$key", $secret_hash, 20 * MINUTE_IN_SECONDS );
+
         $lambda( [
             'url'        => $url,
             'key'        => $key,
