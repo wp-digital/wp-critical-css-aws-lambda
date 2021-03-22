@@ -84,7 +84,7 @@ final class Plugin
         add_action( 'wp_enqueue_scripts', [ $this, 'init_stylesheet' ], PHP_INT_MAX );
         add_action( 'wp_head', [ $this, 'schedule_lambda' ], 2 );
         add_action( 'wp_head', [ $this, 'print_stylesheet' ], 3 );
-        add_action( 'aws_lambda_critical_css', [ $this, 'invoke_lambda' ] );
+        add_action( 'aws_lambda_critical_css', [ $this, 'invoke_lambda' ], 10, 6 );
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
     }
 
