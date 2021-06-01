@@ -132,7 +132,9 @@ final class Plugin
             return;
         }
 
-        if ( false !== get_transient( "aws_lambda_critical_css_secret_$template_name" ) ) {
+        $locked_hash = get_transient( "aws_lambda_critical_css_$template_name" );
+
+        if ( $locked_hash == $new_hash ) {
             return;
         }
 
