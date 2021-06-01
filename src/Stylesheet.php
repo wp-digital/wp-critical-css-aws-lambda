@@ -107,7 +107,13 @@ class Stylesheet
     public function get_sources() : array
     {
         return array_reduce( $this->get_registered_styles(), function ( array $sources, array $style ) {
-            $sources[] = add_query_arg( 'ver', $style['ver'], $style['src'] );
+            $src = $style['src'];
+
+            if ( ! empty( $style['ver'] ) ) {
+                $src = add_query_arg( 'ver', $style['ver'], $src );
+            }
+
+            $sources[] = esc_url( apply_filters( 'style_loader_src', $src ) );
 
             return $sources;
         }, [] );
