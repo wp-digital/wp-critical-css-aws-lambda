@@ -132,6 +132,10 @@ final class Plugin
             return;
         }
 
+        if ( false !== get_transient( "aws_lambda_critical_css_secret_$template_name" ) ) {
+            return;
+        }
+
         set_transient( "aws_lambda_critical_css_$template_name", $new_hash, 20 * MINUTE_IN_SECONDS );
 
         wp_schedule_single_event( time(), 'aws_lambda_critical_css', [
