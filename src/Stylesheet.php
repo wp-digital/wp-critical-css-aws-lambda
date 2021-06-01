@@ -113,7 +113,7 @@ class Stylesheet
                 $src = add_query_arg( 'ver', $style['ver'], $src );
             }
 
-            $sources[] = esc_url( apply_filters( 'style_loader_src', $src ) );
+            $sources[] = esc_url( apply_filters( 'style_loader_src', $src, $style['handle'] ) );
 
             return $sources;
         }, [] );
