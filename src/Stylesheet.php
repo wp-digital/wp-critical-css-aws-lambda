@@ -1,51 +1,30 @@
 <?php
 
-namespace Innocode\CriticalCSSAWSLambda;
+namespace Innocode\CriticalCSS;
 
 /**
  * Class Stylesheet
- * @package Innocode\CriticalCSSAWSLambda
+ * @package Innocode\CriticalCSS
  */
 class Stylesheet
 {
     /**
      * @var array
      */
-    protected $styles;
-    /**
-     * @var array
-     */
-    protected $registered_styles;
+    protected $styles = [];
     /**
      * @var string
      */
     protected $hash;
 
     /**
-     * Stylesheet constructor.
-     * @param array $styles
-     */
-    public function __construct( array $styles )
-    {
-        $this->styles = $styles;
-    }
-
-    /**
+     * Returns URL's of stylesheets which are used for critical path.
+     *
      * @return array
      */
     public function get_styles() : array
     {
         return $this->styles;
-    }
-
-    /**
-     * Returns URL's of stylesheets which are used for critical path.
-     *
-     * @return array
-     */
-    public function get_registered_styles() : array
-    {
-        return $this->registered_styles;
     }
 
     /**
@@ -59,46 +38,35 @@ class Stylesheet
     }
 
     /**
-     * @param string $default_version
+     * @return void
      */
-    public function init( string $default_version )
+    public function init() : void
     {
-        $this->init_registered_styles( $default_version );
-        $this->init_hash();
-    }
+        global $wp_version;
 
-    /**
-     * @param string $default_version
-     */
-    public function init_registered_styles( string $default_version )
-    {
-        global $wp_styles;
+        $registered_styles = wp_styles()->registered;
+        $default_version = apply_filters( 'innocode_critical_css_default_version', $wp_version );
 
-        if ( ! isset( $wp_styles ) ) {
-            return;
-        }
-
-        $registered_styles = $wp_styles->registered;
-
-        foreach ( $this->get_styles() as $handle ) {
+        foreach ( apply_filters( 'innocode_critical_css_styles', [] ) as $handle ) {
             if ( isset( $registered_styles[ $handle ] ) ) {
                 $style = $registered_styles[ $handle ];
-                $this->registered_styles[] = [
+                $this->styles[] = [
                     'handle' => $style->handle,
                     'src'    => $style->src,
-                    'ver'    => $style->ver ? $style->ver : $default_version,
+                    'ver'    => $style->ver ?: $default_version,
                 ];
             }
         }
+
+        $this->hash = md5( serialize( $this->styles ) );
     }
 
-    public function init_hash()
+    /**
+     * @return bool
+     */
+    public function has_styles() : bool
     {
-        $this->hash = md5(
-            array_reduce( $this->get_registered_styles(), function ( $version, array $style ) {
-                return "$version|{$style['handle']}:{$style['ver']}";
-            }, '' )
-        );
+        return ! empty( $this->styles );
     }
 
     /**
@@ -106,7 +74,7 @@ class Stylesheet
      */
     public function get_sources() : array
     {
-        return array_reduce( $this->get_registered_styles(), function ( array $sources, array $style ) {
+        return array_reduce( $this->get_styles(), function ( array $sources, array $style ) {
             $src = $style['src'];
 
             if ( ! empty( $style['ver'] ) ) {

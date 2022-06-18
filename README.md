@@ -2,7 +2,7 @@
 
 ### Description
 
-WordPress plugin for generating critical stylesheets for templates via AWS Lambda.
+Generates critical stylesheets for templates via AWS Lambda.
 See also [AWS Lambda Critical CSS](https://github.com/innocode-digital/aws-lambda-critical-css).
 
 ### Install
@@ -40,7 +40,7 @@ define( 'AWS_LAMBDA_CRITICAL_CSS_REGION', '' ); // e.g. eu-west-1
 define( 'AWS_LAMBDA_CRITICAL_CSS_FUNCTION', '' ); // Optional, default value is "critical-css-production-processor"
 ````
 
-Create serverless function on your favorite service. Expected default name is **critical-css-production-processor**
+Create serverless function on your favorite service. Expected default name is **critical-css-production-processor**,
 but you may use any other. There is a prepared function [AWS Lambda Critical CSS](https://github.com/innocode-digital/aws-lambda-critical-css).
 
 ### Usage
@@ -48,7 +48,7 @@ but you may use any other. There is a prepared function [AWS Lambda Critical CSS
 To generate critical CSS from enqueued styles:
 
 ````
-add_filter( 'aws_lambda_critical_css_styles', function () {
+add_filter( 'innocode_critical_css_styles', function () {
     return [
         // List of enqueued styles. 
         // Specify styles which you think are needed for critical CSS.
@@ -56,52 +56,12 @@ add_filter( 'aws_lambda_critical_css_styles', function () {
 } );
 ````
 
-It's possible to use following hooks for loading inline critical CSS into HTML markup only on first visit:
-
-````
-add_filter( 'aws_lambda_critical_css_can_print', function ( $can_print, $key, $hash ) {
-    // Fires before rendering critical CSS,
-    // pass true or false to render or not.
-    return true | false;
-}, 10, 3 );
-
-add_action( 'aws_lambda_critical_css_printed', function ( $key, $hash ) {
-    // Fires after rendering critical CSS.
-}, 10, 2 );
-```` 
-
-#### Basic example
-
-````
-add_filter( 'aws_lambda_critical_css_can_print', function ( $can_print, $key, $hash ) {
-    $cookie_name = "visited_$key";
-    
-    return ! isset( $_COOKIE[ $cookie_name ] ) || $_COOKIE[ $cookie_name ] != $hash;
-}, 10, 3 );
-
-add_action( 'aws_lambda_critical_css_printed', function ( $key, $hash ) {
-    $path = '/';
-
-    if ( is_multisite() && ! is_subdomain_install() ) {
-        $path .= trim( get_blog_details( get_current_blog_id() )->path, '/' );
-    }
-    
-    $cookie_name = "visited_$key";
-    
-    ?>
-    <script>
-        document.cookie = '<?= esc_attr( $cookie_name ) ?>=<?= rawurlencode( $hash ) ?>' + '; expires=<?= gmdate( 'r', time() + YEAR_IN_SECONDS ) ?>; path=<?= $path ?>';
-    </script>
-    <?php
-}, 10, 2 );
-````
-
 ### Caveats
 
 - Relative paths to custom fonts or images in stylesheets should be changed to absolute:
 
 ````
-add_filter( 'aws_lambda_critical_css_stylesheet', function ( $stylesheet ) {
+add_filter( 'innocode_critical_css_stylesheet', function ( $stylesheet ) {
     $stylesheet = str_replace(
         '../fonts/',
         get_template_directory_uri() . '/path/to/fonts/',
@@ -119,3 +79,14 @@ add_filter( 'aws_lambda_critical_css_stylesheet', function ( $stylesheet ) {
 
 - This plugin is only for generating and rendering critical CSS,
   to defer CSS files you may use [Deferred loading](https://github.com/innocode-digital/wp-deferred-loading).
+
+- If page caching is used then you may want to add variable value from cookie in cache key. E.g. for Batcache it's
+possible to do with next code before `advanced-cache.php` file is included:
+
+````
+foreach ( array_keys( $_COOKIE ) as $name ) {
+    if ( strpos( $name, 'innocode_critical_css_' ) === 0 ) {
+        $GLOBALS['batcache']['unique']['innocode_critical_css'] = substr( $name, strlen( 'innocode_critical_css_' ) );
+    }
+}
+````
