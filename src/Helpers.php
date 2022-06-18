@@ -1,10 +1,10 @@
 <?php
 
-namespace Innocode\CriticalCSSAWSLambda;
+namespace Innocode\CriticalCSS;
 
 /**
  * Class Helpers
- * @package Innocode\CriticalCSSAWSLambda
+ * @package Innocode\CriticalCSS
  */
 final class Helpers
 {
@@ -17,18 +17,6 @@ final class Helpers
     {
         global $wp;
 
-        return home_url( add_query_arg( [], $wp->request ) );
-    }
-
-    /**
-     * Checks if string is md5 hash.
-     *
-     * @param string $hash
-     *
-     * @return bool
-     */
-    public static function is_md5( string $hash ) : bool
-    {
-        return (bool) preg_match( '/^[a-f0-9]{32}$/', $hash );
+        return add_query_arg( $_GET, home_url( trailingslashit( $wp->request ) ) );
     }
 }

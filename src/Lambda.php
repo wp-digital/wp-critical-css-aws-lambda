@@ -1,14 +1,10 @@
 <?php
 
-namespace Innocode\CriticalCSSAWSLambda;
+namespace Innocode\CriticalCSS;
 
 use Aws\Lambda\LambdaClient;
 use Aws\Result;
 
-/**
- * Class Lambda
- * @package Innocode\CriticalCSSAWSLambda
- */
 class Lambda
 {
     /**
@@ -26,7 +22,7 @@ class Lambda
     /**
      * @var string
      */
-    protected $function = 'critical-css-production-processor';
+    protected $function;
     /**
      * @var LambdaClient
      */
@@ -34,6 +30,7 @@ class Lambda
 
     /**
      * Lambda constructor.
+     *
      * @param string $key
      * @param string $secret
      * @param string $region
@@ -71,8 +68,10 @@ class Lambda
 
     /**
      * @param string $function
+     *
+     * @return void
      */
-    public function set_function( string $function )
+    public function set_function( string $function ) : void
     {
         $this->function = $function;
     }
@@ -90,10 +89,17 @@ class Lambda
      */
     public function get_client() : LambdaClient
     {
+        if ( ! isset( $this->client ) ) {
+            $this->init();
+        }
+
         return $this->client;
     }
 
-    public function init()
+    /**
+     * @return void
+     */
+    public function init() : void
     {
         $this->client = new LambdaClient( [
             'credentials' => [
@@ -107,6 +113,7 @@ class Lambda
 
     /**
      * @param array $args
+     *
      * @return Result
      */
     public function __invoke( array $args ) : Result
